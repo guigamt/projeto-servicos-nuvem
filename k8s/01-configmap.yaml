@@ -1,0 +1,12 @@
+# Configuracao que nao e segredo. As credenciais ficam no Secret
+# "rabbitmq-credenciais", criado pelo script k8s-setup.sh a partir do .env
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pedidos-config
+  namespace: pedidos
+data:
+  RABBITMQ_HOST: "rabbitmq"      # nome do Service do RabbitMQ (DNS interno do cluster)
+  RABBITMQ_PORT: "5672"
+  FILA_PEDIDOS: "pedidos"
+  PROCESSAMENTO_MS: "300"
