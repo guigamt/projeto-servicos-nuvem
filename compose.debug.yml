@@ -1,0 +1,14 @@
+# OPCIONAL - so para desenvolvimento.
+# Abre o painel do RabbitMQ em http://localhost:15672, ligado apenas no 127.0.0.1.
+# Nao faz parte da aplicacao: o cliente continua entrando so pelo NGINX.
+# Uso: docker compose -f compose.yml -f compose.debug.yml up -d
+services:
+  rabbitmq:
+    ports:
+      - "127.0.0.1:15672:15672"
+    networks:
+      - backend
+      - admin
+
+networks:
+  admin: {}
