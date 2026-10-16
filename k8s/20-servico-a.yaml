@@ -1,0 +1,46 @@
+# Servico A (API / produtor): sem estado -> Deployment + Service ClusterIP
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servico-a
+  namespace: pedidos
+  labels: { app: servico-a }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: servico-a }
+  template:
+    metadata:
+      labels: { app: servico-a }
+    spec:
+      containers:
+        - name: servico-a
+          image: pedidos/servico-a:1.0
+          imagePullPolicy: IfNotPresent     # imagem construida localmente no cluster
+          ports:
+            - { name: http, containerPort: 8000 }
+          envFrom:
+            - configMapRef: { name: pedidos-config }
+            - secretRef: { name: rabbitmq-credenciais }
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe:                   # so recebe trafego quando esta conectado ao broker
+            httpGet: { path: /api/health/ready, port: http }
+            periodSeconds: 5
+          livenessProbe:                    # processo travado -> reinicia
+            httpGet: { path: /api/health/live, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servico-a
+  namespace: pedidos
+  labels: { app: servico-a }
+spec:
+  type: ClusterIP                           # nao e exposto para fora; quem expoe e o Ingress
+  selector: { app: servico-a }
+  ports:
+    - { name: http, port: 8000, targetPort: http }

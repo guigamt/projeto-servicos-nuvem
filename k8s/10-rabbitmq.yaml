@@ -1,0 +1,78 @@
+# RabbitMQ: componente COM ESTADO -> StatefulSet com volume persistente.
+# Uma unica replica (escopo didatico). Limitacoes explicadas em docs/arquitetura.md
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-headless
+  namespace: pedidos
+  labels: { app: rabbitmq }
+spec:
+  clusterIP: None              # headless: da identidade de rede estavel ao pod rabbitmq-0
+  selector: { app: rabbitmq }
+  ports:
+    - { name: amqp, port: 5672 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq                # e este nome que os servicos A e B usam
+  namespace: pedidos
+  labels: { app: rabbitmq }
+spec:
+  type: ClusterIP               # so dentro do cluster
+  selector: { app: rabbitmq }
+  ports:
+    - { name: amqp, port: 5672, targetPort: 5672 }
+    - { name: painel, port: 15672, targetPort: 15672 }   # acesso so via port-forward
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: pedidos
+spec:
+  serviceName: rabbitmq-headless
+  replicas: 1
+  selector:
+    matchLabels: { app: rabbitmq }
+  template:
+    metadata:
+      labels: { app: rabbitmq }
+    spec:
+      securityContext:
+        fsGroup: 999            # usuario rabbitmq da imagem oficial consegue escrever no volume
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4.1-management
+          ports:
+            - { name: amqp, containerPort: 5672 }
+            - { name: painel, containerPort: 15672 }
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom: { secretKeyRef: { name: rabbitmq-credenciais, key: RABBITMQ_USER } }
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom: { secretKeyRef: { name: rabbitmq-credenciais, key: RABBITMQ_PASSWORD } }
+          volumeMounts:
+            - { name: dados, mountPath: /var/lib/rabbitmq }
+          resources:
+            requests: { cpu: 150m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          readinessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 15
+  volumeClaimTemplates:
+    - metadata:
+        name: dados
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

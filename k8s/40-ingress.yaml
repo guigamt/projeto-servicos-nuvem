@@ -1,0 +1,17 @@
+# Ponto de entrada da aplicacao no cluster (NGINX Ingress Controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pedidos
+  namespace: pedidos
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: servico-a
+                port: { number: 8000 }
