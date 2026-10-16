@@ -141,7 +141,7 @@ Outros pontos:
 
 - **Probes do Serviço A:** separamos `live` (processo de pé) de `ready` (conectado ao broker). Se o RabbitMQ cair, o pod sai do balanceamento mas não é reiniciado à toa.
 - **Probe do Serviço B:** o worker atualiza o arquivo `/tmp/vivo` a cada segundo. A livenessProbe verifica se esse arquivo foi alterado no último minuto; se o processo travar, o kubelet reinicia o container.
-- **Imagens:** são construídas dentro do Docker do minikube (`eval $(minikube docker-env)`), por isso `imagePullPolicy: IfNotPresent` e nenhum registry externo.
+- **Imagens:** são construídas no Docker local e carregadas no nó do minikube com `minikube image load`, por isso `imagePullPolicy: IfNotPresent` e nenhum registry externo.
 - **Requests de CPU:** o Serviço B pede `100m` e tem limite de `500m`. O HPA calcula a porcentagem em cima do *request*, então sem request o HPA não funciona.
 
 **Limitações do RabbitMQ com 1 réplica:** é um ponto único de falha. Se o pod `rabbitmq-0` cair, o Kubernetes recria ele com o mesmo volume e as mensagens persistentes continuam lá, mas durante esse intervalo o Serviço A responde `503` (não consegue publicar). Para produção o certo seria um cluster de 3 nós com *quorum queues* (por exemplo com o RabbitMQ Cluster Operator) ou um serviço gerenciado. Também usamos o StorageClass padrão do minikube (hostPath), que fica preso ao único nó do cluster.

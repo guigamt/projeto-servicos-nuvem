@@ -20,12 +20,12 @@ echo ">> habilitando NGINX Ingress Controller e metrics-server (necessario pro H
 minikube addons enable ingress
 minikube addons enable metrics-server
 
-# 3) imagens construidas direto no Docker do minikube (sem registry externo)
-echo ">> construindo imagens dentro do minikube"
-eval "$(minikube docker-env)"
+# 3) imagens: construidas no Docker local e carregadas no minikube (sem registry externo)
+echo ">> construindo imagens e carregando no minikube"
 docker build -t pedidos/servico-a:1.0 ./servico-a
 docker build -t pedidos/servico-b:1.0 ./servico-b
-eval "$(minikube docker-env --unset)"
+minikube image load pedidos/servico-a:1.0 --overwrite=true
+minikube image load pedidos/servico-b:1.0 --overwrite=true
 
 # 4) namespace + secret (gerado a partir do .env, nao fica salvo em arquivo)
 kubectl apply -f k8s/00-namespace.yaml
