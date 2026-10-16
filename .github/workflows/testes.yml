@@ -1,0 +1,27 @@
+name: testes
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  etapa1-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sobe a aplicacao e testa o fluxo + falha controlada
+        run: bash scripts/teste-compose.sh
+
+  etapas2e3-kubernetes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: medyagh/setup-minikube@latest
+        with:
+          driver: docker
+          cpus: max
+          memory: 6000m
+      - name: Implanta no Kubernetes e testa self-healing, escala e HPA
+        run: bash scripts/teste-k8s.sh
