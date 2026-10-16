@@ -1,0 +1,279 @@
+>> .env criado com senha aleatoria
+>> habilitando NGINX Ingress Controller e metrics-server (necessario pro HPA)
+* ingress is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+  - Using image registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.9
+  - Using image registry.k8s.io/ingress-nginx/controller:v1.15.1
+  - Using image registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.9
+* Verifying ingress addon...
+* The 'ingress' addon is enabled
+* metrics-server is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+  - Using image registry.k8s.io/metrics-server/metrics-server:v0.9.0
+* The 'metrics-server' addon is enabled
+>> construindo imagens e carregando no minikube
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 462B 0.0s done
+#1 DONE 0.0s
+
+#2 [auth] library/python:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 64B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 13.75kB done
+#5 DONE 0.0s
+
+#6 [1/6] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#6 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 done
+#6 sha256:6912e23eb44595b44dc6d9882b34f305ad6f6e9667cec70b13e5dbc4f8cd97f4 0B / 12.12MB 0.1s
+#6 sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 10.37kB / 10.37kB done
+#6 sha256:2b4f19dae3a777dfc3b76730bda1e82e1f66ab2a2686fa93ca78edbfb4f04ffe 1.75kB / 1.75kB done
+#6 sha256:df18428df8a0f9189c84e7424d214b4c50092af1f9dca5842a00c41c39bda316 5.66kB / 5.66kB done
+#6 sha256:ecc510c1e359bdc007b39802570bb7e4dec7d6ebccf357c3201a74299113e05e 0B / 29.84MB 0.1s
+#6 sha256:75b6a36c64a1cf3520fc4b4aae4739d5caa8a6a05c27835a920a61784c9c32f8 0B / 1.29MB 0.1s
+#6 sha256:6912e23eb44595b44dc6d9882b34f305ad6f6e9667cec70b13e5dbc4f8cd97f4 12.12MB / 12.12MB 0.3s
+#6 sha256:ecc510c1e359bdc007b39802570bb7e4dec7d6ebccf357c3201a74299113e05e 29.84MB / 29.84MB 0.3s
+#6 sha256:75b6a36c64a1cf3520fc4b4aae4739d5caa8a6a05c27835a920a61784c9c32f8 1.29MB / 1.29MB 0.3s
+#6 sha256:6912e23eb44595b44dc6d9882b34f305ad6f6e9667cec70b13e5dbc4f8cd97f4 12.12MB / 12.12MB 0.5s done
+#6 sha256:ecc510c1e359bdc007b39802570bb7e4dec7d6ebccf357c3201a74299113e05e 29.84MB / 29.84MB 0.5s done
+#6 sha256:75b6a36c64a1cf3520fc4b4aae4739d5caa8a6a05c27835a920a61784c9c32f8 1.29MB / 1.29MB 0.5s done
+#6 extracting sha256:ecc510c1e359bdc007b39802570bb7e4dec7d6ebccf357c3201a74299113e05e 0.1s
+#6 sha256:bbc5a12237474ec0b23b5051260d56d6436a24d70d9cad961adebe7a037ed813 0B / 249B 0.5s
+#6 sha256:bbc5a12237474ec0b23b5051260d56d6436a24d70d9cad961adebe7a037ed813 249B / 249B 0.5s done
+#6 extracting sha256:ecc510c1e359bdc007b39802570bb7e4dec7d6ebccf357c3201a74299113e05e 0.7s done
+#6 extracting sha256:75b6a36c64a1cf3520fc4b4aae4739d5caa8a6a05c27835a920a61784c9c32f8 0.1s done
+#6 extracting sha256:6912e23eb44595b44dc6d9882b34f305ad6f6e9667cec70b13e5dbc4f8cd97f4
+#6 extracting sha256:6912e23eb44595b44dc6d9882b34f305ad6f6e9667cec70b13e5dbc4f8cd97f4 0.4s done
+#6 extracting sha256:bbc5a12237474ec0b23b5051260d56d6436a24d70d9cad961adebe7a037ed813
+#6 extracting sha256:bbc5a12237474ec0b23b5051260d56d6436a24d70d9cad961adebe7a037ed813 done
+#6 DONE 4.4s
+
+#7 [2/6] WORKDIR /app
+#7 DONE 0.0s
+
+#8 [3/6] COPY requirements.txt .
+#8 DONE 0.0s
+
+#9 [4/6] RUN pip install -r requirements.txt
+#9 1.098 Collecting fastapi==0.115.12 (from -r requirements.txt (line 1))
+#9 1.170   Downloading fastapi-0.115.12-py3-none-any.whl.metadata (27 kB)
+#9 1.208 Collecting uvicorn==0.34.0 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 1.223   Downloading uvicorn-0.34.0-py3-none-any.whl.metadata (6.5 kB)
+#9 1.267 Collecting aio-pika==9.5.5 (from -r requirements.txt (line 3))
+#9 1.284   Downloading aio_pika-9.5.5-py3-none-any.whl.metadata (16 kB)
+#9 1.319 Collecting starlette<0.47.0,>=0.40.0 (from fastapi==0.115.12->-r requirements.txt (line 1))
+#9 1.334   Downloading starlette-0.46.2-py3-none-any.whl.metadata (6.2 kB)
+#9 1.466 Collecting pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 (from fastapi==0.115.12->-r requirements.txt (line 1))
+#9 1.482   Downloading pydantic-2.14.1-py3-none-any.whl.metadata (133 kB)
+#9 1.534 Collecting typing-extensions>=4.8.0 (from fastapi==0.115.12->-r requirements.txt (line 1))
+#9 1.549   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+#9 1.572 Collecting click>=7.0 (from uvicorn==0.34.0->uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 1.587   Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+#9 1.605 Collecting h11>=0.8 (from uvicorn==0.34.0->uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 1.621   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+#9 1.653 Collecting aiormq<6.9,>=6.8 (from aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 1.671   Downloading aiormq-6.8.1-py3-none-any.whl.metadata (19 kB)
+#9 1.691 Collecting exceptiongroup<2,>=1 (from aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 1.706   Downloading exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+#9 1.881 Collecting yarl (from aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 1.897   Downloading yarl-1.25.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (111 kB)
+#9 1.939 Collecting httptools>=0.6.3 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 1.954   Downloading httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+#9 1.977 Collecting python-dotenv>=0.13 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 1.992   Downloading python_dotenv-1.2.4-py3-none-any.whl.metadata (29 kB)
+#9 2.025 Collecting pyyaml>=5.1 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 2.042   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+#9 2.078 Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 2.093   Downloading uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.1 kB)
+#9 2.151 Collecting watchfiles>=0.13 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 2.167   Downloading watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+#9 2.240 Collecting websockets>=10.4 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 2.256   Downloading websockets-17.2-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.3 kB)
+#9 2.277 Collecting pamqp==3.3.0 (from aiormq<6.9,>=6.8->aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 2.297   Downloading pamqp-3.3.0-py2.py3-none-any.whl.metadata (4.7 kB)
+#9 2.321 Collecting annotated-types>=0.6.0 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi==0.115.12->-r requirements.txt (line 1))
+#9 2.336   Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+#9 2.760 Collecting pydantic-core==2.50.1 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi==0.115.12->-r requirements.txt (line 1))
+#9 2.776   Downloading pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.5 kB)
+#9 2.802 Collecting typing-inspection>=0.4.4 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi==0.115.12->-r requirements.txt (line 1))
+#9 2.820   Downloading typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+#9 2.846 Collecting anyio<5,>=3.6.2 (from starlette<0.47.0,>=0.40.0->fastapi==0.115.12->-r requirements.txt (line 1))
+#9 2.862   Downloading anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+#9 2.891 Collecting idna>=2.0 (from yarl->aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 2.906   Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+#9 3.102 Collecting multidict>=4.0 (from yarl->aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 3.121   Downloading multidict-7.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (6.2 kB)
+#9 3.175 Collecting propcache>=0.2.1 (from yarl->aio-pika==9.5.5->-r requirements.txt (line 3))
+#9 3.190   Downloading propcache-0.5.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (25 kB)
+#9 3.217 Downloading fastapi-0.115.12-py3-none-any.whl (95 kB)
+#9 3.235 Downloading uvicorn-0.34.0-py3-none-any.whl (62 kB)
+#9 3.252 Downloading aio_pika-9.5.5-py3-none-any.whl (54 kB)
+#9 3.269 Downloading aiormq-6.8.1-py3-none-any.whl (31 kB)
+#9 3.286 Downloading pamqp-3.3.0-py2.py3-none-any.whl (33 kB)
+#9 3.303 Downloading click-8.5.0-py3-none-any.whl (125 kB)
+#9 3.321 Downloading exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+#9 3.336 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+#9 3.352 Downloading httptools-0.9.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (552 kB)
+#9 3.381    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 552.8/552.8 kB 21.9 MB/s eta 0:00:00
+#9 3.397 Downloading pydantic-2.14.1-py3-none-any.whl (488 kB)
+#9 3.425 Downloading pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.2 MB)
+#9 3.456    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 65.8 MB/s eta 0:00:00
+#9 3.473 Downloading python_dotenv-1.2.4-py3-none-any.whl (23 kB)
+#9 3.489 Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+#9 3.492    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 511.6 MB/s eta 0:00:00
+#9 3.508 Downloading starlette-0.46.2-py3-none-any.whl (72 kB)
+#9 3.523 Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+#9 3.538 Downloading uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.5 MB)
+#9 3.568    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 155.9 MB/s eta 0:00:00
+#9 3.583 Downloading watchfiles-1.3.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (458 kB)
+#9 3.599 Downloading websockets-17.2-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (225 kB)
+#9 3.615 Downloading yarl-1.25.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (117 kB)
+#9 3.630 Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+#9 3.646 Downloading anyio-4.15.1-py3-none-any.whl (132 kB)
+#9 3.661 Downloading idna-3.20-py3-none-any.whl (69 kB)
+#9 3.677 Downloading multidict-7.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (483 kB)
+#9 3.694 Downloading propcache-0.5.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (250 kB)
+#9 3.709 Downloading typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+#9 3.764 Installing collected packages: websockets, uvloop, typing-extensions, pyyaml, python-dotenv, propcache, pamqp, multidict, idna, httptools, h11, click, annotated-types, yarl, uvicorn, typing-inspection, pydantic-core, exceptiongroup, anyio, watchfiles, starlette, pydantic, aiormq, fastapi, aio-pika
+#9 4.668 Successfully installed aio-pika-9.5.5 aiormq-6.8.1 annotated-types-0.8.0 anyio-4.15.1 click-8.5.0 exceptiongroup-1.3.1 fastapi-0.115.12 h11-0.16.0 httptools-0.9.0 idna-3.20 multidict-7.1.0 pamqp-3.3.0 propcache-0.5.4 pydantic-2.14.1 pydantic-core-2.50.1 python-dotenv-1.2.4 pyyaml-6.0.3 starlette-0.46.2 typing-extensions-4.16.0 typing-inspection-0.4.4 uvicorn-0.34.0 uvloop-0.23.0 watchfiles-1.3.0 websockets-17.2 yarl-1.25.1
+#9 4.668 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#9 4.743 
+#9 4.743 [notice] A new release of pip is available: 25.0.1 -> 26.2.1
+#9 4.743 [notice] To update, run: pip install --upgrade pip
+#9 DONE 5.1s
+
+#10 [5/6] COPY app ./app
+#10 DONE 0.0s
+
+#11 [6/6] RUN useradd --create-home --uid 1000 app
+#11 DONE 0.2s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 0.5s done
+#12 writing image sha256:350e426c79037a010d3fbaa5303592a306f1b5c62de0d56159d1d9762d83ee98 done
+#12 naming to docker.io/pedidos/servico-a:1.0 done
+#12 DONE 0.5s
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 393B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 64B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.25kB done
+#5 DONE 0.0s
+
+#6 [2/6] WORKDIR /app
+#6 CACHED
+
+#7 [3/6] COPY requirements.txt .
+#7 DONE 0.0s
+
+#8 [4/6] RUN pip install -r requirements.txt
+#8 1.049 Collecting pika==1.3.2 (from -r requirements.txt (line 1))
+#8 1.105   Downloading pika-1.3.2-py3-none-any.whl.metadata (13 kB)
+#8 1.124 Downloading pika-1.3.2-py3-none-any.whl (155 kB)
+#8 1.159 Installing collected packages: pika
+#8 1.225 Successfully installed pika-1.3.2
+#8 1.225 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#8 1.313 
+#8 1.313 [notice] A new release of pip is available: 25.0.1 -> 26.2.1
+#8 1.313 [notice] To update, run: pip install --upgrade pip
+#8 DONE 1.4s
+
+#9 [5/6] COPY worker.py .
+#9 DONE 0.0s
+
+#10 [6/6] RUN useradd --create-home --uid 1000 app
+#10 DONE 0.1s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 0.2s done
+#11 writing image sha256:efdbfdfac741ecfcc83fa66dbe25bbcc97ca0015ec88d211f077ef691a67fd24 done
+#11 naming to docker.io/pedidos/servico-b:1.0 done
+#11 DONE 0.2s
+namespace/pedidos created
+secret/rabbitmq-credenciais created
+>> aguardando o ingress controller
+pod/ingress-nginx-controller-d7cd8c989-k46xb condition met
+namespace/pedidos unchanged
+configmap/pedidos-config created
+service/rabbitmq-headless created
+service/rabbitmq created
+statefulset.apps/rabbitmq created
+deployment.apps/servico-a created
+service/servico-a created
+deployment.apps/servico-b created
+ingress.networking.k8s.io/pedidos created
+>> aguardando os componentes ficarem prontos
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+Waiting for deployment "servico-a" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "servico-a" rollout to finish: 1 of 2 updated replicas are available...
+deployment "servico-a" successfully rolled out
+deployment "servico-b" successfully rolled out
+
+NAME                             READY   STATUS    RESTARTS   AGE
+pod/rabbitmq-0                   1/1     Running   0          32s
+pod/servico-a-6f69595668-nsss2   1/1     Running   0          32s
+pod/servico-a-6f69595668-pq9k7   1/1     Running   0          32s
+pod/servico-b-57479f7888-g8l5k   1/1     Running   0          31s
+pod/servico-b-57479f7888-qc29g   1/1     Running   0          31s
+
+NAME                        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)              AGE
+service/rabbitmq            ClusterIP   10.99.170.30    <none>        5672/TCP,15672/TCP   32s
+service/rabbitmq-headless   ClusterIP   None            <none>        5672/TCP             32s
+service/servico-a           ClusterIP   10.98.218.136   <none>        8000/TCP             32s
+
+NAME                                CLASS   HOSTS   ADDRESS        PORTS   AGE
+ingress.networking.k8s.io/pedidos   nginx   *       192.168.49.2   80      31s
+
+Pronto. Rode ./scripts/k8s-acesso.sh para abrir o acesso pelo Ingress.
+{"status":"pronto","instancia":"servico-a-6f69595668-nsss2"}
+>> aplicacao no Kubernetes: http://localhost:8081
+== pedido pelo Ingress
+{"status":"enfileirado","pedido_id":"0e351bf6-5ba2-4a60-8ec3-ebbcc4f00702","request_id":"7aeb2b3c12af662def075d02aa3bfc76","atendido_por":"servico-a-6f69595668-pq9k7"}
+== self-healing
+pod "servico-b-57479f7888-g8l5k" deleted from pedidos namespace
+deployment "servico-b" successfully rolled out
+== escala manual
+deployment.apps/servico-b scaled
+Waiting for deployment "servico-b" rollout to finish: 2 of 4 updated replicas are available...
+Waiting for deployment "servico-b" rollout to finish: 3 of 4 updated replicas are available...
+deployment "servico-b" successfully rolled out
+deployment.apps/servico-b scaled
+== HPA
+horizontalpodautoscaler.autoscaling/servico-b created
+>> enviando lote de 1500 pedidos para http://localhost:8081
+{"status":"enfileirado","quantidade":1500,"request_id":"2f16e3e2ac19292e81df717601ec0482","atendido_por":"servico-a-6f69595668-nsss2"}
+t=10s replicas=1 cpu=4% fila=1497
+t=20s replicas=1 cpu=4% fila=1462
+t=30s replicas=1 cpu=4% fila=1427
+t=40s replicas=1 cpu=4% fila=1391
+t=50s replicas=1 cpu=4% fila=1356
+t=60s replicas=1 cpu=4% fila=1320
+t=70s replicas=3 cpu=339% fila=1251
+NAME        REFERENCE              TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+servico-b   Deployment/servico-b   cpu: 339%/50%   1         6         1          2m7s
+ETAPAS 2 e 3 OK
