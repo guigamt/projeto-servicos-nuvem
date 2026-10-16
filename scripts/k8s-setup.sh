@@ -36,6 +36,10 @@ kubectl -n pedidos create secret generic rabbitmq-credenciais \
 
 # 5) espera o ingress controller (o webhook dele precisa estar pronto pra aceitar o Ingress)
 echo ">> aguardando o ingress controller"
+for i in $(seq 1 60); do
+  kubectl -n ingress-nginx get pods -l app.kubernetes.io/component=controller 2>/dev/null | grep -q controller && break
+  sleep 5
+done
 kubectl -n ingress-nginx wait --for=condition=ready pod \
   -l app.kubernetes.io/component=controller --timeout=300s
 
