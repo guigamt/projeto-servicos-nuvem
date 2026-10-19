@@ -1,76 +1,65 @@
-#!/usr/bin/env bash
-# Roteiro da demonstracao da ETAPA 2 (Kubernetes).
-# Pressupoe: ./scripts/k8s-setup.sh e ./scripts/k8s-acesso.sh ja executados.
-set -uo pipefail
+#!/bin/bash
+# Demonstracao da ETAPA 2 (Kubernetes)
+# antes: ./scripts/k8s-setup.sh e ./scripts/k8s-acesso.sh
 cd "$(dirname "$0")/.."
-URL="${URL:-http://localhost:8081}"
+URL=http://localhost:8081
 K="kubectl -n pedidos"
 
-titulo() { echo; echo "=================================================================="; echo "  $1"; echo "=================================================================="; }
-pausa()  { echo; read -rp "[Enter para continuar] " _; }
+titulo() { echo; echo "======================================================"; echo " $1"; echo "======================================================"; }
+pausa() { if [ -t 0 ]; then read -p "[enter para continuar]"; fi; }
 
 titulo "1) O que esta rodando no cluster"
-$K get deploy,statefulset,pods -o wide
+$K get deployments,statefulsets,pods
 echo
-$K get svc,ingress
-echo ">> todos os Services sao ClusterIP (internos). So o Ingress recebe trafego de fora."
+$K get services,ingress
+echo "-> todos os services sao ClusterIP (internos). A entrada e o Ingress"
 pausa
 
-titulo "2) Pedido pelo Ingress + rastreio nos logs"
-RESP=$(curl -sS -X POST "$URL/api/pedidos" -H 'Content-Type: application/json' \
-  -d '{"cliente":"demo-k8s","itens":[{"produto":"mochila","quantidade":1}]}')
-echo "$RESP" | python3 -m json.tool
-RID=$(echo "$RESP" | python3 -c 'import json,sys; print(json.load(sys.stdin)["request_id"])')
+titulo "2) Pedido pelo Ingress e seguindo nos logs"
+RESPOSTA=$(curl -s -X POST $URL/pedidos -H "Content-Type: application/json" \
+  -d '{"cliente":"joao","produto":"mochila","quantidade":1}')
+echo "$RESPOSTA"
+ID=$(echo "$RESPOSTA" | python3 -c "import sys,json; print(json.load(sys.stdin)['pedido']['request_id'])")
 sleep 3
-echo; echo "--- Ingress controller ---"
-kubectl -n ingress-nginx logs -l app.kubernetes.io/component=controller --tail=200 | grep "$RID" || true
-echo "--- Servico A ---"
-$K logs -l app=servico-a --prefix --tail=200 | grep "$RID" || true
-echo "--- Servico B ---"
-$K logs -l app=servico-b --prefix --tail=200 | grep "$RID" || true
+echo "--- ingress ---"
+kubectl -n ingress-nginx logs -l app.kubernetes.io/component=controller --tail=100 | grep "$ID"
+echo "--- servico A ---"
+$K logs -l app=servico-a --tail=100 | grep "$ID"
+echo "--- servico B ---"
+$K logs -l app=servico-b --tail=100 | grep "$ID"
 pausa
 
-titulo "3) SELF-HEALING: removendo manualmente um pod do Servico B"
+titulo "3) SELF-HEALING: apagando um pod do servico B"
 $K get pods -l app=servico-b
-ALVO=$($K get pods -l app=servico-b -o jsonpath='{.items[0].metadata.name}')
-echo; echo ">> kubectl delete pod $ALVO"
-$K delete pod "$ALVO" --wait=false
-for i in $(seq 1 8); do
-  sleep 3
-  echo "--- t=$((i*3))s ---"
-  $K get pods -l app=servico-b --no-headers
-done
+POD=$($K get pods -l app=servico-b -o jsonpath='{.items[0].metadata.name}')
 echo
-$K get deploy servico-b
-echo ">> o Deployment percebeu que tinha menos replicas que o desejado e criou outro pod."
-pausa
-
-titulo "4) Service estavel: derrubando um pod do Servico A com trafego chegando"
-ALVO=$($K get pods -l app=servico-a -o jsonpath='{.items[0].metadata.name}')
-$K delete pod "$ALVO" --wait=false
-for i in $(seq 1 10); do
-  curl -sS -o /dev/null -w "requisicao $i -> HTTP %{http_code}\n" "$URL/api/fila"
-  sleep 1
+echo "kubectl delete pod $POD"
+$K delete pod $POD --wait=false
+for i in 1 2 3 4 5 6; do
+  sleep 3
+  echo "--- depois de $((i*3))s ---"
+  $K get pods -l app=servico-b
 done
-$K get pods -l app=servico-a
+$K get deployment servico-b
+echo "-> o deployment quer 2 replicas, viu que tinha 1 e criou outro pod sozinho"
 pausa
 
-titulo "5) Persistencia do RabbitMQ: mensagens sobrevivem ao restart do broker"
-echo ">> zerando consumidores (servico-b replicas=0) para acumular mensagens"
-$K scale deploy servico-b --replicas=0
+titulo "4) RabbitMQ com volume: as mensagens sobrevivem se o pod do rabbit cair"
+$K scale deployment servico-b --replicas=0
 sleep 5
-./scripts/gerar-carga.sh 5 "$URL"
+./scripts/gerar-carga.sh 5 $URL
 ./scripts/fila.sh k8s
-echo; echo ">> apagando o pod rabbitmq-0 (o volume persistente continua)"
+echo
+echo "apagando o pod rabbitmq-0..."
 $K delete pod rabbitmq-0
 $K rollout status statefulset/rabbitmq --timeout=300s
 sleep 5
 ./scripts/fila.sh k8s
-echo ">> as 5 mensagens continuam la (fila duravel + mensagens persistentes + PVC)"
-echo; echo ">> voltando o servico-b para 2 replicas"
-$K scale deploy servico-b --replicas=2
-$K rollout status deploy/servico-b --timeout=120s
-sleep 8
+echo "-> as 5 mensagens continuam la (fila duravel + mensagem persistente + volume)"
+$K scale deployment servico-b --replicas=2
+$K rollout status deployment/servico-b
+sleep 10
 ./scripts/fila.sh k8s
+
 echo
-echo "Fim da demonstracao da etapa 2."
+echo "fim da etapa 2"

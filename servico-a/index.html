@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedidos</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 0 16px; }
+    input, select, button { width: 100%; padding: 8px; margin: 5px 0 12px; box-sizing: border-box; }
+    button { background: #2563eb; color: white; border: none; cursor: pointer; }
+    pre { background: #eee; padding: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>Loja - Novo pedido</h2>
+
+  <label>Cliente</label>
+  <input id="cliente" value="maria">
+
+  <label>Produto</label>
+  <select id="produto">
+    <option>camiseta</option>
+    <option>caneca</option>
+    <option>mochila</option>
+    <option>bone</option>
+  </select>
+
+  <label>Quantidade</label>
+  <input id="quantidade" type="number" value="1" min="1">
+
+  <button onclick="enviar()">Fazer pedido</button>
+
+  <pre id="resposta"></pre>
+
+  <script>
+    async function enviar() {
+      const pedido = {
+        cliente: document.getElementById("cliente").value,
+        produto: document.getElementById("produto").value,
+        quantidade: Number(document.getElementById("quantidade").value)
+      };
+      const resp = await fetch("/pedidos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pedido)
+      });
+      document.getElementById("resposta").textContent = JSON.stringify(await resp.json(), null, 2);
+    }
+  </script>
+</body>
+</html>

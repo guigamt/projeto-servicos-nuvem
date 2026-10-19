@@ -1,13 +1,9 @@
-#!/usr/bin/env bash
-# Mostra o estado da fila direto no RabbitMQ.
-# Uso: ./scripts/fila.sh            (Docker Compose)
-#      ./scripts/fila.sh k8s        (Kubernetes)
-set -euo pipefail
-cd "$(dirname "$0")/.."
-
-CMD=(rabbitmqctl -q list_queues name messages_ready messages_unacknowledged consumers)
-if [[ "${1:-compose}" == "k8s" ]]; then
-  kubectl -n pedidos exec rabbitmq-0 -- "${CMD[@]}"
+#!/bin/bash
+# mostra quantas mensagens tem na fila e quantos consumidores estao ligados
+# uso: ./scripts/fila.sh        (docker compose)
+#      ./scripts/fila.sh k8s    (kubernetes)
+if [ "$1" == "k8s" ]; then
+  kubectl -n pedidos exec rabbitmq-0 -- rabbitmqctl -q list_queues name messages consumers
 else
-  docker compose exec -T rabbitmq "${CMD[@]}"
+  docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages consumers
 fi

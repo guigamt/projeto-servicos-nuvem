@@ -1,57 +1,41 @@
-#!/usr/bin/env bash
-# ETAPA 2 - sobe o cluster local (minikube), constroi as imagens e implanta tudo.
-set -euo pipefail
+#!/bin/bash
+# ETAPA 2 - sobe o minikube, builda as imagens e aplica os manifestos
+set -e
 cd "$(dirname "$0")/.."
 
-# 1) credenciais: .env fica so na maquina, nunca no Git
-if [[ ! -f .env ]]; then
-  cp .env.example .env
-  sed -i "s/^RABBITMQ_PASSWORD=.*/RABBITMQ_PASSWORD=$(openssl rand -hex 12)/" .env
-  echo ">> .env criado com senha aleatoria"
-fi
-set -a; source .env; set +a
+# senha vem do .env (que nao vai pro git)
+bash scripts/preparar-ambiente.sh
+source .env
 
-# 2) cluster
-if ! minikube status >/dev/null 2>&1; then
-  echo ">> iniciando minikube"
-  minikube start --driver=docker --cpus="${MINIKUBE_CPUS:-$(nproc)}" --memory="${MINIKUBE_MEMORIA:-6144}"
-fi
-echo ">> habilitando NGINX Ingress Controller e metrics-server (necessario pro HPA)"
-minikube addons enable ingress
-minikube addons enable metrics-server
+# 1) cluster
+minikube status > /dev/null 2>&1 || minikube start --driver=docker --cpus=max --memory=6000
+minikube addons enable ingress          # NGINX Ingress Controller
+minikube addons enable metrics-server   # precisa pro HPA ler a CPU dos pods
 
-# 3) imagens: construidas no Docker local e carregadas no minikube (sem registry externo)
-echo ">> construindo imagens e carregando no minikube"
+# 2) imagens (builda local e joga dentro do minikube, sem precisar de registry)
 docker build -t pedidos/servico-a:1.0 ./servico-a
 docker build -t pedidos/servico-b:1.0 ./servico-b
 minikube image load pedidos/servico-a:1.0 --overwrite=true
 minikube image load pedidos/servico-b:1.0 --overwrite=true
 
-# 4) namespace + secret (gerado a partir do .env, nao fica salvo em arquivo)
+# 3) namespace e secret com a senha
 kubectl apply -f k8s/00-namespace.yaml
 kubectl -n pedidos create secret generic rabbitmq-credenciais \
   --from-literal=RABBITMQ_USER="$RABBITMQ_USER" \
   --from-literal=RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-# 5) espera o ingress controller (o webhook dele precisa estar pronto pra aceitar o Ingress)
-echo ">> aguardando o ingress controller"
-for i in $(seq 1 60); do
-  kubectl -n ingress-nginx get pods -l app.kubernetes.io/component=controller 2>/dev/null | grep -q controller && break
-  sleep 5
-done
-kubectl -n ingress-nginx wait --for=condition=ready pod \
-  -l app.kubernetes.io/component=controller --timeout=300s
+# 4) espera o ingress controller ficar pronto
+echo "esperando o ingress controller..."
+until kubectl -n ingress-nginx get pods -l app.kubernetes.io/component=controller 2>/dev/null | grep -q controller; do sleep 5; done
+kubectl -n ingress-nginx wait --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=300s
 
-# 6) aplica os manifestos (a pasta k8s/hpa fica de fora de proposito: e da etapa 3)
+# 5) aplica os manifestos (a pasta hpa fica de fora, e da etapa 3)
 kubectl apply -f k8s/
-
-echo ">> aguardando os componentes ficarem prontos"
 kubectl -n pedidos rollout status statefulset/rabbitmq --timeout=300s
 kubectl -n pedidos rollout status deployment/servico-a --timeout=300s
 kubectl -n pedidos rollout status deployment/servico-b --timeout=300s
 
-echo
 kubectl -n pedidos get pods,svc,ingress
 echo
-echo "Pronto. Rode ./scripts/k8s-acesso.sh para abrir o acesso pelo Ingress."
+echo "pronto! agora rode ./scripts/k8s-acesso.sh"

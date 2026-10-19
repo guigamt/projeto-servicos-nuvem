@@ -1,6 +1,5 @@
-# Etapa 3 - elasticidade automatica do Servico B por uso de CPU.
-# Aplicar SO depois dos experimentos de self-healing e escala manual:
-#   kubectl apply -f k8s/hpa/servico-b-hpa.yaml
+# Etapa 3 - HPA do servico B
+# aplicar so na etapa 3: kubectl apply -f k8s/hpa/servico-b-hpa.yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -12,20 +11,18 @@ spec:
     kind: Deployment
     name: servico-b
   minReplicas: 1
-  maxReplicas: 6
+  maxReplicas: 5
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 50     # media de 50% do request de CPU (100m) por pod
+          averageUtilization: 50   # se a media passar de 50% do request, sobe mais pods
   behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      policies:
-        - { type: Pods, value: 2, periodSeconds: 15 }   # sobe ate 2 pods a cada 15s
     scaleDown:
-      stabilizationWindowSeconds: 60                    # espera 1 min de carga baixa
+      stabilizationWindowSeconds: 60   # espera 1 min sem carga antes de comecar a descer
       policies:
-        - { type: Pods, value: 1, periodSeconds: 30 }   # desce 1 pod a cada 30s (gradual)
+        - type: Pods
+          value: 1
+          periodSeconds: 30           # tira 1 pod a cada 30s (desce aos poucos)

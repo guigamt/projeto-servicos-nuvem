@@ -1,67 +1,66 @@
-#!/usr/bin/env bash
-# Roteiro da demonstracao da ETAPA 1 (Docker Compose).
-# Pressupoe que a aplicacao ja esta no ar: docker compose up -d --build
-set -uo pipefail
+#!/bin/bash
+# Demonstracao da ETAPA 1 (Docker Compose)
+# antes: docker compose up -d --build
 cd "$(dirname "$0")/.."
-URL="${URL:-http://localhost:8080}"
+URL=http://localhost:8080
 
-titulo() { echo; echo "=================================================================="; echo "  $1"; echo "=================================================================="; }
-pausa()  { echo; read -rp "[Enter para continuar] " _; }
+titulo() { echo; echo "======================================================"; echo " $1"; echo "======================================================"; }
+pausa() { if [ -t 0 ]; then read -p "[enter para continuar]"; fi; }
 
-titulo "1) Containers e portas: so o NGINX publica porta para o host"
-docker compose ps --format 'table {{.Service}}\t{{.State}}\t{{.Ports}}'
+titulo "1) Containers rodando - so o nginx tem porta aberta (8080)"
+docker compose ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}"
 pausa
 
-titulo "2) Tentando acessar o Servico A direto (deve FALHAR)"
-curl -sS -m 3 http://localhost:8000/api/health/live || echo ">> sem acesso: o Servico A nao tem porta publicada"
+titulo "2) Tentando acessar o servico A direto (tem que dar erro)"
+curl -s -m 3 http://localhost:5000/health || echo "nao conectou -> o servico A nao esta exposto"
 pausa
 
-titulo "3) Criando um pedido pelo ponto de entrada (NGINX)"
-RESP=$(curl -sS -X POST "$URL/api/pedidos" -H 'Content-Type: application/json' \
-  -d '{"cliente":"demo","itens":[{"produto":"camiseta","quantidade":2}]}')
-echo "$RESP" | python3 -m json.tool
-RID=$(echo "$RESP" | python3 -c 'import json,sys; print(json.load(sys.stdin)["request_id"])')
-sleep 2
+titulo "3) Fazendo um pedido pelo nginx"
+RESPOSTA=$(curl -s -X POST $URL/pedidos -H "Content-Type: application/json" \
+  -d '{"cliente":"maria","produto":"camiseta","quantidade":2}')
+echo "$RESPOSTA"
+ID=$(echo "$RESPOSTA" | python3 -c "import sys,json; print(json.load(sys.stdin)['pedido']['request_id'])")
+sleep 3
 pausa
 
-titulo "4) Seguindo o request_id=$RID pelos logs de todos os componentes"
-docker compose logs --no-log-prefix nginx servico-a servico-b 2>/dev/null | grep "$RID" || true
+titulo "4) Seguindo o request_id=$ID nos logs (nginx -> A -> B)"
+docker compose logs --no-log-prefix nginx servico-a servico-b | grep "$ID"
 pausa
 
-titulo "5) Servico A nao conhece o Servico B (variaveis de ambiente do A)"
-docker compose exec -T servico-a env | grep -E 'RABBITMQ_HOST|FILA' 
-echo ">> nenhuma referencia ao servico-b: o A so conhece o broker e o nome da fila"
+titulo "5) O servico A nao conhece o servico B (variaveis do A)"
+docker compose exec -T servico-a env | grep RABBITMQ_HOST
+echo "-> o A so sabe onde esta o rabbitmq, nao tem nada do servico B"
 pausa
 
-titulo "6) FALHA CONTROLADA: parando o Servico B"
+titulo "6) FALHA: parando o servico B"
 docker compose stop servico-b
 ./scripts/fila.sh
 pausa
 
-titulo "7) Criando 10 pedidos com o consumidor parado"
-for i in $(seq 1 10); do
-  curl -sS -o /dev/null -w "pedido $i -> HTTP %{http_code}\n" -X POST "$URL/api/pedidos" \
-    -H 'Content-Type: application/json' -d "{\"cliente\":\"falha-$i\",\"itens\":[{\"produto\":\"caneca\",\"quantidade\":1}]}"
-done
-echo ">> o Servico A continuou aceitando os pedidos. Estado da fila:"
+titulo "7) Fazendo 10 pedidos com o servico B parado"
+./scripts/gerar-carga.sh 10 $URL
+sleep 2
+echo "-> o A continuou recebendo. Os pedidos ficaram esperando na fila:"
 ./scripts/fila.sh
 pausa
 
-titulo "8) Religando o Servico B: mensagens pendentes sao processadas"
+titulo "8) Ligando o servico B de novo"
 docker compose start servico-b
-sleep 8
-docker compose logs --since 15s servico-b
+sleep 15
+docker compose logs --since 20s servico-b
 echo
 ./scripts/fila.sh
+echo "-> os 10 pedidos que estavam na fila foram processados"
 pausa
 
-titulo "9) Extra: 3 consumidores dividindo a fila"
+titulo "9) Extra: 3 servicos B dividindo os pedidos"
 docker compose up -d --scale servico-b=3 --no-recreate servico-b
 sleep 5
-./scripts/gerar-carga.sh 30 "$URL"
-sleep 10
-echo ">> pedidos processados por instancia:"
-docker compose logs --since 20s servico-b 2>/dev/null | grep "processado em" | awk '{print $1}' | sort | uniq -c
+./scripts/gerar-carga.sh 12 $URL
+sleep 8
+echo "pedidos processados por cada container:"
+docker compose logs --since 15s servico-b | grep "processado" | grep -o "\[B [^]]*\]" | sort | uniq -c
 docker compose up -d --scale servico-b=1 --no-recreate servico-b
+
 echo
-echo "Fim da demonstracao da etapa 1."
+echo "fim da etapa 1"

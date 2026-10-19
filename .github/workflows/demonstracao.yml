@@ -1,0 +1,54 @@
+# Roda a demonstracao inteira (etapas 1, 2 e 3) numa maquina do GitHub.
+# A saida de cada etapa fica salva no branch "evidencias".
+# Pra rodar na mao: aba Actions -> demonstracao -> Run workflow
+name: demonstracao
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepara o .env
+        run: bash scripts/preparar-ambiente.sh && mkdir -p evidencias
+
+      - name: Etapa 1 - Docker Compose
+        run: |
+          docker compose up -d --build --wait
+          ./scripts/etapa1-demo.sh 2>&1 | tee evidencias/etapa1.txt
+          docker compose down
+
+      - name: Instala o minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          driver: docker
+          cpus: max
+          memory: 6000m
+
+      - name: Etapa 2 - Kubernetes
+        run: |
+          ./scripts/k8s-setup.sh 2>&1 | tee evidencias/k8s-setup.txt
+          ./scripts/k8s-acesso.sh
+          ./scripts/etapa2-demo.sh 2>&1 | tee evidencias/etapa2.txt
+
+      - name: Etapa 3 - Escalabilidade e HPA
+        run: ./scripts/etapa3-demo.sh 2>&1 | tee evidencias/etapa3.txt
+
+      - name: Salva a saida no branch evidencias
+        if: always()
+        run: |
+          cp -r evidencias /tmp/evidencias && cd /tmp/evidencias
+          git init -q -b evidencias
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add . && git commit -qm "saida da demonstracao (execucao $GITHUB_RUN_NUMBER)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" evidencias

@@ -1,21 +1,16 @@
 FROM python:3.12-slim
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
-
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY app.py index.html ./
 
-# roda sem root
-RUN useradd --create-home --uid 1000 app
-USER app
+# so pra mostrar os prints na hora nos logs
+ENV PYTHONUNBUFFERED=1
 
-# porta interna; quem publica porta pro host e so o NGINX
-EXPOSE 8000
+# porta interna, nao e publicada pro host (quem expoe e o nginx)
+EXPOSE 5000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+CMD ["python", "app.py"]

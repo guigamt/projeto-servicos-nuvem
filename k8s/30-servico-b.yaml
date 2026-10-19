@@ -1,32 +1,31 @@
-# Servico B (worker / consumidor): Deployment SEM Service.
-# Ninguem precisa encontrar o Servico B: ele e que abre conexao com o RabbitMQ.
+# Servico B (consumidor) - so Deployment, nao tem Service
+# porque ninguem precisa acessar ele, ele que conecta no rabbitmq
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: servico-b
   namespace: pedidos
-  labels: { app: servico-b }
 spec:
-  replicas: 2              # mais de uma replica para o experimento de self-healing
+  replicas: 2
   selector:
-    matchLabels: { app: servico-b }
+    matchLabels:
+      app: servico-b
   template:
     metadata:
-      labels: { app: servico-b }
+      labels:
+        app: servico-b
     spec:
-      terminationGracePeriodSeconds: 30
       containers:
         - name: servico-b
           image: pedidos/servico-b:1.0
           imagePullPolicy: IfNotPresent
           envFrom:
-            - configMapRef: { name: pedidos-config }
-            - secretRef: { name: rabbitmq-credenciais }
+            - configMapRef:
+                name: pedidos-config
+            - secretRef:
+                name: rabbitmq-credenciais
           resources:
-            requests: { cpu: 100m, memory: 64Mi }   # o HPA calcula a % de CPU em cima do request
-            limits: { cpu: 500m, memory: 128Mi }
-          livenessProbe:
-            # o worker atualiza /tmp/vivo a cada ~1s; se parar de atualizar, travou
-            exec: { command: ["sh", "-c", "test -n \"$(find /tmp/vivo -mmin -1)\""] }
-            initialDelaySeconds: 20
-            periodSeconds: 20
+            requests:
+              cpu: 100m   # o HPA calcula a % de CPU em cima desse valor
+            limits:
+              cpu: 500m

@@ -1,81 +1,65 @@
 # Etapa 1 - Docker Compose
-# Uso: cp .env.example .env  (e troque a senha)  ->  docker compose up -d --build
-name: pedidos-nuvem
+# antes de subir: cp .env.example .env (e troca a senha)
+# subir: docker compose up -d --build
 
 services:
   nginx:
     image: nginx:1.27-alpine
     ports:
-      - "8080:80"            # UNICA porta publicada para o host
+      - "8080:80"   # unica porta aberta pro cliente
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - frontend
-      - backend
+      - externa
+      - interna
     depends_on:
-      servico-a:
-        condition: service_healthy
-    restart: unless-stopped
+      - servico-a
 
   servico-a:
     build: ./servico-a
-    image: pedidos/servico-a:1.0
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: ${RABBITMQ_USER:?defina RABBITMQ_USER no arquivo .env}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?defina RABBITMQ_PASSWORD no arquivo .env}
-      FILA_PEDIDOS: pedidos
-    networks:
-      - backend
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/ready', timeout=3)"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-    restart: unless-stopped
-
-  servico-b:
-    build: ./servico-b
-    image: pedidos/servico-b:1.0
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      FILA_PEDIDOS: pedidos
-      PROCESSAMENTO_MS: ${PROCESSAMENTO_MS:-300}
     networks:
-      - backend
+      - interna
     depends_on:
       rabbitmq:
         condition: service_healthy
-    stop_grace_period: 15s
-    restart: unless-stopped
+
+  servico-b:
+    build: ./servico-b
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      TEMPO_PROCESSAMENTO: 1
+    networks:
+      - interna
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   rabbitmq:
-    image: rabbitmq:4.1-management
-    hostname: rabbitmq        # nome fixo: o RabbitMQ guarda os dados pelo nome do no
+    image: rabbitmq:4.1
+    hostname: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
-      - rabbitmq-data:/var/lib/rabbitmq   # fila duravel + mensagens persistentes sobrevivem a restart
+      - dados-rabbitmq:/var/lib/rabbitmq   # guarda as mensagens mesmo se o container reiniciar
     networks:
-      - backend
+      - interna
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 10s
-      retries: 12
-      start_period: 20s
-    restart: unless-stopped
+      retries: 10
 
 networks:
-  frontend: {}
-  backend:
-    internal: true            # rede sem saida e sem portas para o host
+  externa:
+  interna:
+    internal: true   # rede interna, sem acesso de fora
 
 volumes:
-  rabbitmq-data: {}
+  dados-rabbitmq:

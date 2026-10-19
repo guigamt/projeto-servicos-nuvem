@@ -1,4 +1,4 @@
-# Ponto de entrada da aplicacao no cluster (NGINX Ingress Controller)
+# Ingress - ponto de entrada (NGINX Ingress Controller), manda tudo pro servico A
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -14,4 +14,5 @@ spec:
             backend:
               service:
                 name: servico-a
-                port: { number: 8000 }
+                port:
+                  number: 5000

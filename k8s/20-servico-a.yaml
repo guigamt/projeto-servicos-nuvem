@@ -1,46 +1,43 @@
-# Servico A (API / produtor): sem estado -> Deployment + Service ClusterIP
+# Servico A (produtor) - Deployment + Service
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: servico-a
   namespace: pedidos
-  labels: { app: servico-a }
 spec:
   replicas: 2
   selector:
-    matchLabels: { app: servico-a }
+    matchLabels:
+      app: servico-a
   template:
     metadata:
-      labels: { app: servico-a }
+      labels:
+        app: servico-a
     spec:
       containers:
         - name: servico-a
           image: pedidos/servico-a:1.0
-          imagePullPolicy: IfNotPresent     # imagem construida localmente no cluster
+          imagePullPolicy: IfNotPresent   # imagem buildada local e carregada no minikube
           ports:
-            - { name: http, containerPort: 8000 }
+            - containerPort: 5000
           envFrom:
-            - configMapRef: { name: pedidos-config }
-            - secretRef: { name: rabbitmq-credenciais }
-          resources:
-            requests: { cpu: 50m, memory: 96Mi }
-            limits: { cpu: 500m, memory: 256Mi }
-          readinessProbe:                   # so recebe trafego quando esta conectado ao broker
-            httpGet: { path: /api/health/ready, port: http }
-            periodSeconds: 5
-          livenessProbe:                    # processo travado -> reinicia
-            httpGet: { path: /api/health/live, port: http }
-            initialDelaySeconds: 10
-            periodSeconds: 15
+            - configMapRef:
+                name: pedidos-config
+            - secretRef:
+                name: rabbitmq-credenciais
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
 ---
+# Service ClusterIP: so acessivel dentro do cluster. Quem expoe pra fora e o Ingress
 apiVersion: v1
 kind: Service
 metadata:
   name: servico-a
   namespace: pedidos
-  labels: { app: servico-a }
 spec:
-  type: ClusterIP                           # nao e exposto para fora; quem expoe e o Ingress
-  selector: { app: servico-a }
+  selector:
+    app: servico-a
   ports:
-    - { name: http, port: 8000, targetPort: http }
+    - port: 5000
