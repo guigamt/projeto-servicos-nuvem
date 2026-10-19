@@ -32,6 +32,13 @@ kubectl apply -f k8s/hpa/servico-b-hpa.yaml
 echo "esperando o metrics-server mandar a primeira medida de CPU..."
 until [ -n "$(cpu_atual)" ]; do sleep 5; done
 $K get hpa servico-b
+echo
+echo "sem carga o HPA vai descer pro minimo (1 replica). esperando..."
+for i in $(seq 1 24); do
+  [ "$($K get deployment servico-b -o jsonpath='{.status.readyReplicas}')" == "1" ] && break
+  sleep 10
+done
+$K get hpa servico-b
 pausa
 
 titulo "5) Gerando carga: 300 pedidos"

@@ -1,117 +1,103 @@
 # Projeto - Serviços de Nuvem
 
-Aplicação distribuída de **pedidos** usando containers, mensageria, orquestração e elasticidade.
+Projeto da disciplina de Serviços de Nuvem (Engenharia da Computação - Mackenzie), prof. José Carmino Gomes Jr.
 
-Disciplina: Serviços de Nuvem (Engenharia da Computação) - Prof. José Carmino Gomes Jr.
-
-**Integrantes**
-
+Integrantes:
 - Guilherme Piragibe Ramos Meira
-- _(adicionar os demais integrantes)_
+- (colocar os outros integrantes)
 
-## Ideia geral
+## Sobre o projeto
 
-O domínio escolhido foi um sistema simples de pedidos de uma loja. O cliente faz um pedido, o **Serviço A** (API) recebe, valida e publica uma mensagem no **RabbitMQ**. O **Serviço B** (worker) consome essa mensagem e faz o "processamento" do pedido (simulamos um cálculo pesado que gasta CPU, tipo cálculo de frete e emissão de nota). O **NGINX** é a única porta de entrada.
-
-```
-Cliente --HTTP--> NGINX --> Serviço A --publica--> RabbitMQ --entrega--> Serviço B
-```
-
-A e B não se conhecem. Nenhum dos dois tem o endereço do outro e não existe chamada HTTP entre eles. Toda a comunicação passa pela fila `pedidos`.
-
-A explicação completa das decisões está em [docs/arquitetura.md](docs/arquitetura.md) e o passo a passo da apresentação está em [docs/roteiro-demonstracao.md](docs/roteiro-demonstracao.md).
-
-## Estrutura do repositório
+A gente fez um sistema bem simples de pedidos de uma loja. O cliente faz um pedido, o **Serviço A** recebe e manda pra uma fila no **RabbitMQ**, e o **Serviço B** pega da fila e processa. O **NGINX** é a única entrada da aplicação.
 
 ```
-servico-a/            API de pedidos (Python + FastAPI), produtor
-servico-b/            worker (Python + pika), consumidor
-nginx/nginx.conf      reverse proxy da etapa 1
-compose.yml           etapa 1 (Docker Compose)
-compose.debug.yml     opcional: painel do RabbitMQ só em 127.0.0.1
-k8s/                  etapa 2 (manifestos Kubernetes)
-k8s/hpa/              etapa 3 (HorizontalPodAutoscaler)
-scripts/              scripts de subida, demonstração e testes
-docs/                 documentação
-.devcontainer/        ambiente pronto para GitHub Codespaces
-.github/workflows/    testes automáticos (GitHub Actions)
+Cliente -> NGINX -> Serviço A -> RabbitMQ -> Serviço B
 ```
 
-## Como rodar
+O A e o B não se conhecem e não se chamam diretamente. Tudo passa pela fila `pedidos`.
 
-O jeito mais fácil é pelo **GitHub Codespaces**, que já vem com Docker, kubectl e minikube instalados (configurado em `.devcontainer/`). Também funciona em qualquer máquina com Docker, minikube e kubectl.
+- Serviço A: Python + Flask
+- Serviço B: Python + pika
+- RabbitMQ 4.1
+- NGINX
 
-### Credenciais
+A explicação da arquitetura está em [docs/arquitetura.md](docs/arquitetura.md) e o roteiro da apresentação em [docs/roteiro-demonstracao.md](docs/roteiro-demonstracao.md).
 
-As senhas não ficam no repositório. O arquivo `.env` é criado a partir do `.env.example` (no Codespaces isso acontece sozinho, com senha aleatória):
+## Pastas
+
+```
+servico-a/      API que recebe os pedidos (produtor)
+servico-b/      worker que processa os pedidos (consumidor)
+nginx/          configuracao do nginx (etapa 1)
+compose.yml     docker compose (etapa 1)
+k8s/            manifestos do kubernetes (etapa 2)
+k8s/hpa/        HPA do servico B (etapa 3)
+scripts/        scripts pra subir e demonstrar cada etapa
+docs/           documentacao
+```
+
+## Senha do RabbitMQ
+
+A senha não fica no código. Ela fica num arquivo `.env` que não vai pro Git:
 
 ```bash
-cp .env.example .env   # depois troque a senha
+cp .env.example .env
+# depois troca a senha dentro do .env
 ```
 
-### Etapa 1 - Docker Compose
+(ou roda `./scripts/preparar-ambiente.sh`, que já cria o `.env` com uma senha aleatória)
+
+## Etapa 1 - Docker Compose
 
 ```bash
 docker compose up -d --build
-docker compose ps
 ```
 
-A aplicação fica em `http://localhost:8080`. Só o NGINX publica porta.
+Acessar em http://localhost:8080 (página simples pra fazer pedido).
 
-Demonstração guiada (inclui a falha controlada do Serviço B):
+Fazer um pedido pelo terminal:
+
+```bash
+curl -X POST http://localhost:8080/pedidos \
+  -H "Content-Type: application/json" \
+  -d '{"cliente":"maria","produto":"caneca","quantidade":2}'
+```
+
+Demonstração (inclui parar o serviço B e mandar 10 pedidos):
 
 ```bash
 ./scripts/etapa1-demo.sh
 ```
 
-Para desligar: `docker compose down` (o volume do RabbitMQ continua; `docker compose down -v` apaga tudo).
+Desligar: `docker compose down`
 
-### Etapa 2 - Kubernetes (minikube)
-
-Antes, desligue o Compose (`docker compose down`) para liberar recursos.
+## Etapa 2 - Kubernetes (minikube)
 
 ```bash
-./scripts/k8s-setup.sh     # sobe o minikube, ingress, metrics-server, imagens e manifestos
-./scripts/k8s-acesso.sh    # abre o acesso pelo Ingress em http://localhost:8081
-./scripts/etapa2-demo.sh   # self-healing, Service estável e persistência do RabbitMQ
+docker compose down          # desliga a etapa 1 antes
+./scripts/k8s-setup.sh       # sobe minikube, ingress, metrics-server e aplica os yaml
+./scripts/k8s-acesso.sh      # libera o acesso pelo ingress em http://localhost:8081
+./scripts/etapa2-demo.sh     # self-healing e persistencia do rabbitmq
 ```
 
-### Etapa 3 - Escalabilidade e elasticidade
+## Etapa 3 - Escalabilidade e HPA
 
 ```bash
-./scripts/etapa3-demo.sh   # escala manual e depois HPA com carga artificial
+./scripts/etapa3-demo.sh
 ```
 
 Comandos úteis:
 
 ```bash
-kubectl -n pedidos get pods,hpa
-kubectl -n pedidos get hpa servico-b --watch
-./scripts/fila.sh k8s              # estado da fila
-./scripts/gerar-carga.sh 1500 http://localhost:8081
+kubectl -n pedidos get pods
+kubectl -n pedidos get hpa --watch
+./scripts/fila.sh k8s
+./scripts/gerar-carga.sh 300 http://localhost:8081
 ```
 
-## Endpoints (sempre pelo ponto de entrada)
+## Rodando no GitHub
 
-| Método | Caminho | O que faz |
-|---|---|---|
-| GET | `/` | página simples para criar pedidos e ver a fila |
-| POST | `/api/pedidos` | cria um pedido e publica na fila |
-| POST | `/api/pedidos/lote` | cria N pedidos aleatórios (usado para gerar carga) |
-| GET | `/api/fila` | quantas mensagens estão esperando e quantos consumidores existem |
-| GET | `/api/health/live` e `/api/health/ready` | usados pelos healthchecks e probes |
-
-Exemplo:
-
-```bash
-curl -X POST http://localhost:8080/api/pedidos \
-  -H 'Content-Type: application/json' \
-  -d '{"cliente":"ana","itens":[{"produto":"caneca","quantidade":2}]}'
-```
-
-## Testes automáticos
-
-A cada push o GitHub Actions roda `scripts/teste-compose.sh` (fluxo completo, falha do consumidor e restart do broker) e `scripts/teste-k8s.sh` (implantação no minikube, self-healing, escala manual e HPA).
+Toda vez que tem push na `main`, o GitHub Actions roda a demonstração inteira (as 3 etapas) e salva o que apareceu no terminal no branch **evidencias** (`etapa1.txt`, `etapa2.txt`, `etapa3.txt`). Também dá pra rodar na mão em Actions -> demonstracao -> Run workflow.
 
 ## Referências
 

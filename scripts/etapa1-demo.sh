@@ -24,7 +24,12 @@ sleep 3
 pausa
 
 titulo "4) Seguindo o request_id=$ID nos logs (nginx -> A -> B)"
-docker compose logs --no-log-prefix nginx servico-a servico-b | grep "$ID"
+echo "--- nginx ---"
+docker compose logs --no-log-prefix nginx | grep "$ID"
+echo "--- servico A ---"
+docker compose logs --no-log-prefix servico-a | grep "$ID"
+echo "--- servico B ---"
+docker compose logs --no-log-prefix servico-b | grep "$ID"
 pausa
 
 titulo "5) O servico A nao conhece o servico B (variaveis do A)"
