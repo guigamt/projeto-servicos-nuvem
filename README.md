@@ -4,7 +4,10 @@ Projeto da disciplina de Serviços de Nuvem (Engenharia da Computação - Macken
 
 Integrantes:
 - Guilherme Piragibe Ramos Meira
-- (colocar os outros integrantes)
+- Leonardo Timbola
+- Lucas Freires
+- Matheus Meloni
+- Sabrina Neves
 
 ## Sobre o projeto
 
