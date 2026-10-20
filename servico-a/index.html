@@ -8,11 +8,20 @@
     body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 0 16px; }
     input, select, button { width: 100%; padding: 8px; margin: 5px 0 12px; box-sizing: border-box; }
     button { background: #2563eb; color: white; border: none; cursor: pointer; }
+    .fila { display: flex; gap: 10px; margin-bottom: 20px; }
+    .fila div { flex: 1; background: #f1f1f1; padding: 10px; text-align: center; }
+    .fila b { display: block; font-size: 28px; }
     pre { background: #eee; padding: 10px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <h2>Loja - Novo pedido</h2>
+  <h2>Loja - Pedidos</h2>
+
+  <!-- atualiza sozinho a cada 2s -->
+  <div class="fila">
+    <div><b id="esperando">-</b>pedidos na fila</div>
+    <div><b id="consumidores">-</b>servicos B ligados</div>
+  </div>
 
   <label>Cliente</label>
   <input id="cliente" value="maria">
@@ -29,13 +38,14 @@
   <input id="quantidade" type="number" value="1" min="1">
 
   <button onclick="enviar()">Fazer pedido</button>
+  <button onclick="enviarVarios(10)">Mandar 10 pedidos</button>
 
   <pre id="resposta"></pre>
 
   <script>
-    async function enviar() {
+    async function fazerPedido(cliente) {
       const pedido = {
-        cliente: document.getElementById("cliente").value,
+        cliente: cliente,
         produto: document.getElementById("produto").value,
         quantidade: Number(document.getElementById("quantidade").value)
       };
@@ -44,8 +54,30 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(pedido)
       });
-      document.getElementById("resposta").textContent = JSON.stringify(await resp.json(), null, 2);
+      return resp.json();
     }
+
+    async function enviar() {
+      const resposta = await fazerPedido(document.getElementById("cliente").value);
+      document.getElementById("resposta").textContent = JSON.stringify(resposta, null, 2);
+    }
+
+    async function enviarVarios(n) {
+      for (let i = 1; i <= n; i++) {
+        await fazerPedido(document.getElementById("cliente").value + "-" + i);
+      }
+      document.getElementById("resposta").textContent = n + " pedidos enviados pra fila";
+    }
+
+    async function atualizarFila() {
+      try {
+        const dados = await (await fetch("/fila")).json();
+        document.getElementById("esperando").textContent = dados.esperando ?? "?";
+        document.getElementById("consumidores").textContent = dados.consumidores ?? "?";
+      } catch (e) {}
+    }
+    atualizarFila();
+    setInterval(atualizarFila, 2000);
   </script>
 </body>
 </html>

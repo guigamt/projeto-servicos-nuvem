@@ -1,0 +1,79 @@
+# Sobe a aplicacao numa maquina do GitHub e gera um link publico temporario
+# (cloudflare quick tunnel) pra abrir a pagina de pedidos no navegador.
+# Rodar: aba Actions -> abrir-online -> Run workflow
+# O link aparece no topo da pagina da execucao (e no passo "Link da aplicacao").
+name: abrir-online
+
+on:
+  workflow_dispatch:
+    inputs:
+      etapa:
+        description: "Qual versao subir"
+        type: choice
+        options: [docker-compose, kubernetes]
+        default: docker-compose
+      minutos:
+        description: "Quantos minutos deixar no ar"
+        default: "30"
+
+jobs:
+  online:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepara o .env
+        run: bash scripts/preparar-ambiente.sh
+
+      - name: Sobe com Docker Compose (porta 8080)
+        if: inputs.etapa == 'docker-compose'
+        run: |
+          docker compose up -d --build --wait
+          echo "PORTA=8080" >> $GITHUB_ENV
+
+      - name: Instala o minikube
+        if: inputs.etapa == 'kubernetes'
+        uses: medyagh/setup-minikube@latest
+        with:
+          driver: docker
+          cpus: max
+          memory: 6000m
+
+      - name: Sobe no Kubernetes (porta 8081, pelo Ingress)
+        if: inputs.etapa == 'kubernetes'
+        run: |
+          ./scripts/k8s-setup.sh
+          ./scripts/k8s-acesso.sh
+          kubectl apply -f k8s/hpa/servico-b-hpa.yaml
+          echo "PORTA=8081" >> $GITHUB_ENV
+
+      - name: Link da aplicacao
+        run: |
+          curl -sL -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          ./cloudflared tunnel --no-autoupdate --url http://localhost:$PORTA > tunel.log 2>&1 &
+          for i in $(seq 1 30); do
+            LINK=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunel.log | head -1)
+            [ -n "$LINK" ] && break
+            sleep 2
+          done
+          echo "::notice title=Link da aplicacao::$LINK"
+          echo "## Aplicacao no ar: $LINK" >> $GITHUB_STEP_SUMMARY
+          echo "======================================"
+          echo " ABRA NO NAVEGADOR: $LINK"
+          echo "======================================"
+
+      - name: Mantem no ar e mostra os logs
+        run: |
+          FIM=$(( $(date +%s) + ${{ inputs.minutos }} * 60 ))
+          if [ "$PORTA" == "8080" ]; then
+            docker compose logs -f servico-a servico-b &
+          else
+            kubectl -n pedidos logs -f -l 'app in (servico-a,servico-b)' --prefix --max-log-requests 10 &
+          fi
+          while [ $(date +%s) -lt $FIM ]; do
+            sleep 60
+            [ "$PORTA" == "8081" ] && kubectl -n pedidos get hpa,pods --no-headers
+          done
+          echo "tempo acabou, desligando"

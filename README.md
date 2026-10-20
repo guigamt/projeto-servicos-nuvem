@@ -98,6 +98,12 @@ kubectl -n pedidos get hpa --watch
 ./scripts/gerar-carga.sh 300 http://localhost:8081
 ```
 
+## Ver a aplicação online (sem instalar nada)
+
+Em **Actions -> abrir-online -> Run workflow**, escolhe `docker-compose` ou `kubernetes` e clica em Run. Depois de uns 2 minutos (ou uns 5 no kubernetes) aparece um link `https://...trycloudflare.com` no topo da página da execução. Abrindo esse link aparece a página de pedidos. Ela fica no ar pelo tempo escolhido (padrão 30 min).
+
+Na página dá pra fazer pedido, mandar 10 de uma vez e ver quantos pedidos estão na fila e quantos serviços B estão ligados (rota `GET /fila` do Serviço A, que só consulta o RabbitMQ).
+
 ## Rodando no GitHub
 
 Toda vez que tem push na `main`, o GitHub Actions roda a demonstração inteira (as 3 etapas) e salva o que apareceu no terminal no branch **evidencias** (`etapa1.txt`, `etapa2.txt`, `etapa3.txt`). Também dá pra rodar na mão em Actions -> demonstracao -> Run workflow.

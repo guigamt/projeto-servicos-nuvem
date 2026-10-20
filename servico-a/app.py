@@ -47,6 +47,19 @@ def health():
     return jsonify({"status": "ok"})
 
 
+@app.route("/fila")
+def ver_fila():
+    # mostra quantos pedidos estao esperando na fila e quantos servicos B estao conectados
+    try:
+        credenciais = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
+        conexao = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credenciais))
+        fila = conexao.channel().queue_declare(queue=FILA, durable=True, passive=True)
+        conexao.close()
+        return jsonify({"esperando": fila.method.message_count, "consumidores": fila.method.consumer_count})
+    except Exception:
+        return jsonify({"erro": "rabbitmq indisponivel"}), 503
+
+
 @app.route("/pedidos", methods=["POST"])
 def criar_pedido():
     # o nginx manda esse id no header, assim da pra seguir o pedido nos logs
