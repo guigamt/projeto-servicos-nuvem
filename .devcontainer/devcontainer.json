@@ -1,11 +1,7 @@
 {
   "name": "Projeto Servicos de Nuvem",
-  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": { "minikube": "latest", "helm": "none" }
-  },
-  "hostRequirements": { "cpus": 4, "memory": "8gb" },
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "hostRequirements": { "cpus": 4 },
   "forwardPorts": [8080, 8081],
   "portsAttributes": {
     "8080": { "label": "Etapa 1 - NGINX (Docker Compose)" },
