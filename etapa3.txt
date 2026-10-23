@@ -1,0 +1,96 @@
+
+======================================================
+ 1) ESCALABILIDADE (manual): servico B de 2 para 4 replicas
+======================================================
+deployment.apps/servico-b scaled
+Waiting for deployment "servico-b" rollout to finish: 2 of 4 updated replicas are available...
+Waiting for deployment "servico-b" rollout to finish: 3 of 4 updated replicas are available...
+deployment "servico-b" successfully rolled out
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-6ph6d   1/1     Running   0          12s
+servico-b-95df7db5-th7xf   1/1     Running   0          12s
+servico-b-95df7db5-z2vn7   1/1     Running   0          1s
+servico-b-95df7db5-z5nb5   1/1     Running   0          1s
+
+======================================================
+ 2) Mandando 20 pedidos pra ver os 4 dividindo
+======================================================
+enviando 20 pedidos para http://localhost:8081 ...
+pronto, 20 pedidos enviados
+pedidos processados por pod:
+      5 [B servico-b-95df7db5-6ph6d]
+      5 [B servico-b-95df7db5-th7xf]
+      5 [B servico-b-95df7db5-z2vn7]
+      5 [B servico-b-95df7db5-z5nb5]
+
+======================================================
+ 3) Voltando pra 2 replicas
+======================================================
+deployment.apps/servico-b scaled
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+servico-b   2/2     2            2           109s
+
+======================================================
+ 4) ELASTICIDADE (automatica): ligando o HPA
+======================================================
+horizontalpodautoscaler.autoscaling/servico-b created
+esperando o metrics-server mandar a primeira medida de CPU...
+NAME        REFERENCE              TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+servico-b   Deployment/servico-b   cpu: 166%/50%   1         5         2          0s
+
+sem carga o HPA vai descer pro minimo (1 replica). esperando...
+NAME        REFERENCE              TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+servico-b   Deployment/servico-b   cpu: 1%/50%   1         5         2          3m22s
+
+======================================================
+ 5) Gerando carga: 300 pedidos
+======================================================
+enviando 300 pedidos para http://localhost:8081 ...
+pronto, 300 pedidos enviados
+
+TEMPO   CPU (alvo 50%)   REPLICAS   NA FILA
+0s     1%            1          297
+11s     1%            1          286
+22s     1%            1          275
+33s     1%            1          264
+44s     197%            4          226
+55s     197%            4          179
+67s     197%            4          134
+78s     197%            4          89
+90s     197%            4          45
+101s     500%            5          0
+112s     500%            5          0
+123s     500%            5          0
+133s     500%            5          0
+144s     500%            5          0
+155s     155%            5          0
+166s     155%            5          0
+177s     155%            5          0
+188s     155%            5          0
+199s     155%            5          0
+209s     155%            5          0
+220s     1%            5          0
+231s     1%            5          0
+242s     1%            5          0
+253s     1%            5          0
+264s     1%            4          0
+274s     1%            4          0
+285s     1%            4          0
+296s     1%            3          0
+307s     1%            3          0
+318s     1%            3          0
+329s     1%            2          0
+340s     1%            2          0
+350s     1%            1          0
+
+Events:
+  Type    Reason             Age                    From                       Message
+  ----    ------             ----                   ----                       -------
+  Normal  SuccessfulRescale  5m16s                  horizontal-pod-autoscaler  New size: 4; reason: cpu resource utilization (percentage of request) above target
+  Normal  SuccessfulRescale  4m16s (x2 over 9m16s)  horizontal-pod-autoscaler  New size: 5; reason: cpu resource utilization (percentage of request) above target
+  Normal  SuccessfulRescale  91s (x2 over 7m31s)    horizontal-pod-autoscaler  New size: 4; reason: All metrics below target
+  Normal  SuccessfulRescale  61s (x2 over 7m1s)     horizontal-pod-autoscaler  New size: 3; reason: All metrics below target
+  Normal  SuccessfulRescale  31s (x2 over 6m31s)    horizontal-pod-autoscaler  New size: 2; reason: All metrics below target
+  Normal  SuccessfulRescale  1s (x2 over 6m1s)      horizontal-pod-autoscaler  New size: 1; reason: All metrics below target
+
+fim da etapa 3

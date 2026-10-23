@@ -1,0 +1,124 @@
+
+======================================================
+ 1) Containers rodando - so o nginx tem porta aberta (8080)
+======================================================
+SERVICE     STATE     PORTS
+nginx       running   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+rabbitmq    running   
+servico-a   running   
+servico-b   running   
+
+======================================================
+ 2) Tentando acessar o servico A direto (tem que dar erro)
+======================================================
+nao conectou -> o servico A nao esta exposto
+
+======================================================
+ 3) Fazendo um pedido pelo nginx
+======================================================
+{"pedido":{"cliente":"maria","criado_em":"2026-10-23T23:10:03","id":"acb5ebd5","produto":"camiseta","quantidade":2,"request_id":"9438c339dd884b0fce934778e4a66fde"},"status":"pedido enviado pra fila"}
+
+======================================================
+ 4) Seguindo o request_id=9438c339dd884b0fce934778e4a66fde nos logs (nginx -> A -> B)
+======================================================
+--- nginx ---
+172.19.0.1 "POST /pedidos HTTP/1.1" status=202 request_id=9438c339dd884b0fce934778e4a66fde
+--- servico A ---
+[A] request_id=9438c339dd884b0fce934778e4a66fde pedido recebido: cliente=maria produto=camiseta qtd=2
+[A] request_id=9438c339dd884b0fce934778e4a66fde pedido acb5ebd5 publicado na fila 'pedidos'
+--- servico B ---
+[B 35a49f9df830] request_id=9438c339dd884b0fce934778e4a66fde pedido acb5ebd5 recebido da fila (cliente=maria, produto=camiseta)
+[B 35a49f9df830] request_id=9438c339dd884b0fce934778e4a66fde pedido acb5ebd5 processado
+
+======================================================
+ 5) O servico A nao conhece o servico B (variaveis do A)
+======================================================
+RABBITMQ_HOST=rabbitmq
+-> o A so sabe onde esta o rabbitmq, nao tem nada do servico B
+
+======================================================
+ 6) FALHA: parando o servico B
+======================================================
+ Container projeto-servicos-nuvem-servico-b-1  Stopping
+ Container projeto-servicos-nuvem-servico-b-1  Stopped
+name	messages	consumers
+pedidos	0	0
+
+======================================================
+ 7) Fazendo 10 pedidos com o servico B parado
+======================================================
+enviando 10 pedidos para http://localhost:8080 ...
+pronto, 10 pedidos enviados
+-> o A continuou recebendo. Os pedidos ficaram esperando na fila:
+name	messages	consumers
+pedidos	10	0
+
+======================================================
+ 8) Ligando o servico B de novo
+======================================================
+ Container projeto-servicos-nuvem-rabbitmq-1  Waiting
+ Container projeto-servicos-nuvem-rabbitmq-1  Healthy
+ Container projeto-servicos-nuvem-servico-b-1  Starting
+ Container projeto-servicos-nuvem-servico-b-1  Started
+servico-b-1  | [B 35a49f9df830] desligando...
+servico-b-1  | [B 35a49f9df830] conectado no rabbitmq, esperando pedidos...
+servico-b-1  | [B 35a49f9df830] request_id=e0660301072ca20f08d7f02df87441ad pedido 8bd491ea recebido da fila (cliente=cliente-1, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=e0660301072ca20f08d7f02df87441ad pedido 8bd491ea processado
+servico-b-1  | [B 35a49f9df830] request_id=36e879ba262a8047f1b46a13327e8738 pedido 593be67a recebido da fila (cliente=cliente-3, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=36e879ba262a8047f1b46a13327e8738 pedido 593be67a processado
+servico-b-1  | [B 35a49f9df830] request_id=5351882ee9bf6b8dd6fd8028a47614d1 pedido 92ed1a7f recebido da fila (cliente=cliente-2, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=5351882ee9bf6b8dd6fd8028a47614d1 pedido 92ed1a7f processado
+servico-b-1  | [B 35a49f9df830] request_id=ae29c63279ddeac59aa496b921526e68 pedido 5de06e33 recebido da fila (cliente=cliente-8, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=ae29c63279ddeac59aa496b921526e68 pedido 5de06e33 processado
+servico-b-1  | [B 35a49f9df830] request_id=370686e42169a8b298af374e5c129eeb pedido 1a287f46 recebido da fila (cliente=cliente-7, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=370686e42169a8b298af374e5c129eeb pedido 1a287f46 processado
+servico-b-1  | [B 35a49f9df830] request_id=c38705031841242a5cec50179313454f pedido 955b34c3 recebido da fila (cliente=cliente-10, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=c38705031841242a5cec50179313454f pedido 955b34c3 processado
+servico-b-1  | [B 35a49f9df830] request_id=ec31aef018b49bd9d13efb5394fe3abc pedido 202d3b43 recebido da fila (cliente=cliente-4, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=ec31aef018b49bd9d13efb5394fe3abc pedido 202d3b43 processado
+servico-b-1  | [B 35a49f9df830] request_id=1706477931ce20b627fe6e6aaae27d95 pedido d6771288 recebido da fila (cliente=cliente-6, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=1706477931ce20b627fe6e6aaae27d95 pedido d6771288 processado
+servico-b-1  | [B 35a49f9df830] request_id=ef27eae8ebc2403d04b6dbe29c85e90e pedido 56d28285 recebido da fila (cliente=cliente-5, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=ef27eae8ebc2403d04b6dbe29c85e90e pedido 56d28285 processado
+servico-b-1  | [B 35a49f9df830] request_id=0f4550d6bf53edebc3f0102382f4587e pedido cb239584 recebido da fila (cliente=cliente-9, produto=caneca)
+servico-b-1  | [B 35a49f9df830] request_id=0f4550d6bf53edebc3f0102382f4587e pedido cb239584 processado
+
+name	messages	consumers
+pedidos	0	1
+-> os 10 pedidos que estavam na fila foram processados
+
+======================================================
+ 9) Extra: 3 servicos B dividindo os pedidos
+======================================================
+ Container projeto-servicos-nuvem-rabbitmq-1  Running
+ Container projeto-servicos-nuvem-servico-b-1  Running
+ Container projeto-servicos-nuvem-servico-b-3  Creating
+ Container projeto-servicos-nuvem-servico-b-2  Creating
+ Container projeto-servicos-nuvem-servico-b-3  Created
+ Container projeto-servicos-nuvem-servico-b-2  Created
+ Container projeto-servicos-nuvem-rabbitmq-1  Waiting
+ Container projeto-servicos-nuvem-rabbitmq-1  Healthy
+ Container projeto-servicos-nuvem-servico-b-2  Starting
+ Container projeto-servicos-nuvem-servico-b-2  Started
+ Container projeto-servicos-nuvem-servico-b-3  Starting
+ Container projeto-servicos-nuvem-servico-b-3  Started
+enviando 12 pedidos para http://localhost:8080 ...
+pronto, 12 pedidos enviados
+pedidos processados por cada container:
+      4 [B 35a49f9df830]
+      4 [B 4d147ad5dcf1]
+      4 [B 85cbdad76c47]
+ Container projeto-servicos-nuvem-rabbitmq-1  Running
+ Container projeto-servicos-nuvem-servico-b-1  Running
+ Container projeto-servicos-nuvem-servico-b-3  Stopping
+ Container projeto-servicos-nuvem-servico-b-2  Stopping
+ Container projeto-servicos-nuvem-servico-b-2  Stopped
+ Container projeto-servicos-nuvem-servico-b-2  Removing
+ Container projeto-servicos-nuvem-servico-b-3  Stopped
+ Container projeto-servicos-nuvem-servico-b-3  Removing
+ Container projeto-servicos-nuvem-servico-b-2  Removed
+ Container projeto-servicos-nuvem-servico-b-3  Removed
+ Container projeto-servicos-nuvem-rabbitmq-1  Waiting
+ Container projeto-servicos-nuvem-rabbitmq-1  Healthy
+
+fim da etapa 1

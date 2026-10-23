@@ -1,0 +1,116 @@
+* ingress is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+  - Using image registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.9
+  - Using image registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.9
+  - Using image registry.k8s.io/ingress-nginx/controller:v1.15.1
+* Verifying ingress addon...
+* The 'ingress' addon is enabled
+* metrics-server is an addon maintained by Kubernetes. For any concerns contact minikube on GitHub.
+You can view the list of minikube maintainers at: https://github.com/kubernetes/minikube/blob/master/OWNERS
+  - Using image registry.k8s.io/metrics-server/metrics-server:v0.9.0
+* The 'metrics-server' addon is enabled
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 350B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 64B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 93B done
+#5 DONE 0.0s
+
+#6 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#6 CACHED
+
+#7 [2/5] WORKDIR /app
+#7 CACHED
+
+#8 [3/5] COPY requirements.txt .
+#8 CACHED
+
+#9 [5/5] COPY app.py index.html ./
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 writing image sha256:e31052b4ebe9437ac044ce2bef5f49466126867418791c98bec17a226d8ef9b1 done
+#10 naming to docker.io/pedidos/servico-a:1.0 done
+#10 DONE 0.0s
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 287B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 64B done
+#3 DONE 0.0s
+
+#4 [1/5] FROM docker.io/library/python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 66B done
+#5 DONE 0.0s
+
+#6 [3/5] COPY requirements.txt .
+#6 CACHED
+
+#7 [2/5] WORKDIR /app
+#7 CACHED
+
+#8 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#8 CACHED
+
+#9 [5/5] COPY worker.py .
+#9 CACHED
+
+#10 exporting to image
+#10 exporting layers done
+#10 writing image sha256:43f7650fbdaed968bb7ea0120bc3bc3c4ea5354e86c438f107e40f488ab56ace done
+#10 naming to docker.io/pedidos/servico-b:1.0 done
+#10 DONE 0.0s
+namespace/pedidos created
+secret/rabbitmq-credenciais created
+esperando o ingress controller...
+pod/ingress-nginx-controller-d7cd8c989-pdb78 condition met
+namespace/pedidos unchanged
+configmap/pedidos-config created
+service/rabbitmq created
+statefulset.apps/rabbitmq created
+deployment.apps/servico-a created
+service/servico-a created
+deployment.apps/servico-b created
+ingress.networking.k8s.io/pedidos created
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+deployment "servico-a" successfully rolled out
+deployment "servico-b" successfully rolled out
+NAME                            READY   STATUS    RESTARTS   AGE
+pod/rabbitmq-0                  1/1     Running   0          25s
+pod/servico-a-76788545d-9g9gx   1/1     Running   0          25s
+pod/servico-a-76788545d-l8llp   1/1     Running   0          25s
+pod/servico-b-95df7db5-4rgrv    1/1     Running   0          25s
+pod/servico-b-95df7db5-85gxp    1/1     Running   0          25s
+
+NAME                TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/rabbitmq    ClusterIP   10.102.38.90    <none>        5672/TCP   25s
+service/servico-a   ClusterIP   10.106.18.122   <none>        5000/TCP   25s
+
+NAME                                CLASS   HOSTS   ADDRESS   PORTS   AGE
+ingress.networking.k8s.io/pedidos   nginx   *                 80      25s
+
+pronto! agora rode ./scripts/k8s-acesso.sh

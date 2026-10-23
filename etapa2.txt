@@ -1,0 +1,100 @@
+
+======================================================
+ 1) O que esta rodando no cluster
+======================================================
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/servico-a   2/2     2            2           28s
+deployment.apps/servico-b   2/2     2            2           28s
+
+NAME                        READY   AGE
+statefulset.apps/rabbitmq   1/1     28s
+
+NAME                            READY   STATUS    RESTARTS   AGE
+pod/rabbitmq-0                  1/1     Running   0          28s
+pod/servico-a-76788545d-9g9gx   1/1     Running   0          28s
+pod/servico-a-76788545d-l8llp   1/1     Running   0          28s
+pod/servico-b-95df7db5-4rgrv    1/1     Running   0          28s
+pod/servico-b-95df7db5-85gxp    1/1     Running   0          28s
+
+NAME                TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/rabbitmq    ClusterIP   10.102.38.90    <none>        5672/TCP   29s
+service/servico-a   ClusterIP   10.106.18.122   <none>        5000/TCP   29s
+
+NAME                                CLASS   HOSTS   ADDRESS   PORTS   AGE
+ingress.networking.k8s.io/pedidos   nginx   *                 80      29s
+-> todos os services sao ClusterIP (internos). A entrada e o Ingress
+
+======================================================
+ 2) Pedido pelo Ingress e seguindo nos logs
+======================================================
+{"pedido":{"cliente":"joao","criado_em":"2026-10-23T23:12:56","id":"7355a989","produto":"mochila","quantidade":1,"request_id":"e4b4f4d0c6fec01753a638829e031a2e"},"status":"pedido enviado pra fila"}
+--- ingress ---
+127.0.0.1 - - [23/Oct/2026:23:12:56 +0000] "POST /pedidos HTTP/1.1" 202 198 "-" "curl/8.5.0" 190 0.012 [pedidos-servico-a-5000] [] 10.244.0.7:5000 198 0.011 202 e4b4f4d0c6fec01753a638829e031a2e
+--- servico A ---
+[A] request_id=e4b4f4d0c6fec01753a638829e031a2e pedido recebido: cliente=joao produto=mochila qtd=1
+[A] request_id=e4b4f4d0c6fec01753a638829e031a2e pedido 7355a989 publicado na fila 'pedidos'
+--- servico B ---
+[B servico-b-95df7db5-85gxp] request_id=e4b4f4d0c6fec01753a638829e031a2e pedido 7355a989 recebido da fila (cliente=joao, produto=mochila)
+[B servico-b-95df7db5-85gxp] request_id=e4b4f4d0c6fec01753a638829e031a2e pedido 7355a989 processado
+
+======================================================
+ 3) SELF-HEALING: apagando um pod do servico B
+======================================================
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-4rgrv   1/1     Running   0          32s
+servico-b-95df7db5-85gxp   1/1     Running   0          32s
+
+kubectl delete pod servico-b-95df7db5-4rgrv
+pod "servico-b-95df7db5-4rgrv" deleted from pedidos namespace
+--- depois de 3s ---
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-85gxp   1/1     Running   0          35s
+servico-b-95df7db5-qx97g   1/1     Running   0          3s
+--- depois de 6s ---
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-85gxp   1/1     Running   0          38s
+servico-b-95df7db5-qx97g   1/1     Running   0          6s
+--- depois de 9s ---
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-85gxp   1/1     Running   0          42s
+servico-b-95df7db5-qx97g   1/1     Running   0          10s
+--- depois de 12s ---
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-85gxp   1/1     Running   0          45s
+servico-b-95df7db5-qx97g   1/1     Running   0          13s
+--- depois de 15s ---
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-85gxp   1/1     Running   0          48s
+servico-b-95df7db5-qx97g   1/1     Running   0          16s
+--- depois de 18s ---
+NAME                       READY   STATUS    RESTARTS   AGE
+servico-b-95df7db5-85gxp   1/1     Running   0          51s
+servico-b-95df7db5-qx97g   1/1     Running   0          19s
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+servico-b   2/2     2            2           51s
+-> o deployment quer 2 replicas, viu que tinha 1 e criou outro pod sozinho
+
+======================================================
+ 4) RabbitMQ com volume: as mensagens sobrevivem se o pod do rabbit cair
+======================================================
+deployment.apps/servico-b scaled
+enviando 5 pedidos para http://localhost:8081 ...
+pronto, 5 pedidos enviados
+name	messages	consumers
+pedidos	5	0
+
+apagando o pod rabbitmq-0...
+pod "rabbitmq-0" deleted from pedidos namespace
+Waiting for 1 pods to be ready...
+partitioned roll out complete: 1 new pods have been updated...
+name	messages	consumers
+pedidos	5	0
+-> as 5 mensagens continuam la (fila duravel + mensagem persistente + volume)
+deployment.apps/servico-b scaled
+Waiting for deployment "servico-b" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "servico-b" rollout to finish: 1 of 2 updated replicas are available...
+deployment "servico-b" successfully rolled out
+name	messages	consumers
+pedidos	0	2
+
+fim da etapa 2
